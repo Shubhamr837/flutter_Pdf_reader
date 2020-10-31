@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
-import 'package:pdf_app/StateManagement/CurrentPage.dart';
+import 'package:pdf_app/StateManagement/PdfController.dart';
+import 'package:pdf_app/core/PdfFileService.dart';
 import 'package:pdf_app/screens/PdfViewingPage.dart';
-import 'dart:io';
-import 'package:provider/provider.dart';
+import 'StateManagement/PdfViewModel.dart';
+import 'package:provider/provider.dart' as prov;
+import 'provider_setup.dart';
 
 void main() {
   runApp(MyApp());
@@ -14,13 +16,16 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Pdf Reader',
-      theme: ThemeData(
+    return prov.MultiProvider(
+      providers: providers,
+      child: MaterialApp(
+        title: 'Pdf Reader',
+        theme: ThemeData(
 
-        primarySwatch: Colors.red,
+          primarySwatch: Colors.red,
+        ),
+        home: MyHomePage(title: 'Pdf Reader'),
       ),
-      home: MyHomePage(title: 'Pdf Reader'),
     );
   }
 }
@@ -29,22 +34,15 @@ class MyHomePage extends StatelessWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
   final String title;
-  String _path;
-
-  void _openFileExplorer(context) async {
-
-      try {
 
 
-        FilePickerResult result = await FilePicker.platform.pickFiles(type: FileType.custom,allowedExtensions: ['pdf'],);
-        if(result != null) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => PdfViewingPage(result.files.single.path)));
-        }
+  void _selectFile(context) async {
+    final _pdfView = prov.Provider.of<PdfController>(context,listen: false);
+    String path =await _pdfView.pdfFileService.openFileExplorer(context);
 
-      } on PlatformException catch (e) {
-        print("Unsupported operation" + e.toString());
-      }
-
+    _pdfView.filePath = path;
+    Navigator.push(context, MaterialPageRoute(
+        builder: (context) => PdfViewingPage()));
 
   }
 
@@ -70,7 +68,7 @@ class MyHomePage extends StatelessWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed:  () => _openFileExplorer(context),
+          onPressed:  () => _selectFile(context),
 
           child: Icon(Icons.add),
         ), // This trailing comma makes auto-formatting nicer for build methods.
